@@ -90,9 +90,10 @@ main{display:grid;grid-template-columns:360px 1fr 330px;min-height:0}
  .stat{padding:4px 9px;font-size:11px;white-space:nowrap}.stat b{font-size:14px}
  #newBtn{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:900;border-radius:999px;padding:14px 18px;font-size:14px}
  main{display:block;position:relative;min-height:0}
- main>section{position:absolute;inset:0;display:none}
- main>section.show{display:flex}
- .mapwrap.show{display:block}
+ main>section{position:absolute!important;inset:0}
+ main>section:not(.show){display:none!important}
+ main>section.col.show{display:flex!important}
+ main>section.mapwrap.show{display:block!important}
  .col,.col.right{border:0}
  .legend{bottom:10px;left:10px;right:90px;flex-wrap:wrap;gap:8px;font-size:11px}
  .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
