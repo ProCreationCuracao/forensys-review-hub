@@ -508,3 +508,4 @@ h1,h2,h3{letter-spacing:-.01em}
 .login-form input:focus{outline:0;border-color:var(--red);box-shadow:0 0 0 3px var(--red-50)}
 .login-error{margin:0;color:var(--red-dark);background:var(--red-50);border-radius:8px;padding:8px 10px;font-size:13px}
 .login-button{width:100%;justify-content:center}
+.notes-area{min-height:140px}

@@ -96,6 +96,7 @@ function cleanFormData(raw: unknown) {
     items,
     supervisorSupport: text(data.supervisorSupport, 4000),
     employeeFeedback: text(data.employeeFeedback, 4000),
+    meetingNotes: text(data.meetingNotes, 8000),
     overallScore: (() => { const n = Number(data.overallScore); return data.overallScore == null || data.overallScore === "" || !Number.isFinite(n) ? null : Math.max(0, Math.min(100, Math.round(n * 10) / 10)); })(),
     metrics: (() => {
       const m = (data.metrics && typeof data.metrics === "object" ? data.metrics : {}) as Record<string, unknown>;

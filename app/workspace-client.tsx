@@ -618,6 +618,7 @@ function printEvaluation({ employee, stage, form, template, acknowledged }: { em
   ${sections}
   <div class="box"><h3>Supervisor Feedback &mdash; support to be provided (training, equipment, observation, procedures, coaching)</h3>${esc(form.supervisorSupport)}</div>
   <div class="box"><h3>Employee Feedback</h3>${esc(form.employeeFeedback)}</div>
+  ${form.meetingNotes ? `<div class="box"><h3>Meeting Notes &mdash; summary of what was discussed</h3>${esc(form.meetingNotes)}</div>` : ""}
   <p><b>Acknowledgement of Performance Evaluation</b>${acknowledged ? " &mdash; acknowledged digitally by the employee." : ""}</p>
   <div class="sign"><div>Supervisor Signature &nbsp;&nbsp;&nbsp; Date: ${longDate(form.evaluationDate)}</div><div>Employee Signature &nbsp;&nbsp;&nbsp; Date: ${longDate(form.evaluationDate)}</div></div>
   <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script></body></html>`;
@@ -697,6 +698,7 @@ function EvaluationFormFields({ form, setForm, template, templates, readOnly, ac
     </section>)}
     <Field label="Supervisor feedback — support to be provided" full><textarea value={form.supervisorSupport} readOnly={readOnly} placeholder="Training, equipment, observation, procedures, coaching…" onChange={(event) => set({ supervisorSupport: event.target.value })}/></Field>
     <Field label="Employee feedback" full><textarea value={form.employeeFeedback} readOnly={readOnly} placeholder="Feedback shared by the employee during the evaluation" onChange={(event) => set({ employeeFeedback: event.target.value })}/></Field>
+    <Field label="Meeting notes" full><textarea className="notes-area" value={form.meetingNotes ?? ""} readOnly={readOnly} placeholder="Summary of what was discussed: agreements, follow-up actions, deadlines…" onChange={(event) => set({ meetingNotes: event.target.value })}/></Field>
     <div className="eval-ack"><CheckCircle2 size={15}/><span>{acknowledged ? "Acknowledged — the employee has signed off on this evaluation." : "Acknowledgement — the employee signs off from their own account once this evaluation is completed."}</span></div>
   </div>;
 }

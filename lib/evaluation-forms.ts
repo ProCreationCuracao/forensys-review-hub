@@ -18,6 +18,7 @@ export type EvalFormData = {
   items: Record<string, ItemAnswer>;
   supervisorSupport: string;
   employeeFeedback: string;
+  meetingNotes?: string;
   metrics?: DispatchMetrics;
   overallScore?: number | null;
 };
@@ -41,6 +42,7 @@ export const EMPTY_FORM_DATA: EvalFormData = {
   items: {},
   supervisorSupport: "",
   employeeFeedback: "",
+  meetingNotes: "",
 };
 
 const VALUES_SECTION: FormSection = {
