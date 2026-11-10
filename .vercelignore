@@ -1,0 +1,7 @@
+node_modules
+.next
+.wrangler
+.sites-runtime
+.vinext
+dist
+.env.local
