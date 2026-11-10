@@ -151,7 +151,7 @@ const eta=d=>Math.max(2,Math.round(d*1.4/40*60+1)); // road factor 1.4, 40 km/h
 
 // ---------- map ----------
 const map=L.map('map',{zoomControl:true}).setView([12.16,-68.95],11);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(map);
 const vanIcon=a=>L.divIcon({className:'',html:`<div class="van ${a.status}">${a.id}</div>`,iconSize:[34,34],iconAnchor:[17,17]});
 AGENTS.forEach(a=>{a.m=L.marker([a.lat,a.lng],{icon:vanIcon(a)}).addTo(map).bindTooltip(`${a.id} · ${a.name}<br>Van ${a.van}`)});
 const incIcon=L.divIcon({className:'',html:'<div class="incpin"></div>',iconSize:[22,22],iconAnchor:[11,11]});
