@@ -646,9 +646,10 @@ function DispatchMetricsBlock({ metrics, readOnly, onChange, defs, title }: { me
     regTime1: <input value={metrics.regTime1 ?? ""} readOnly={readOnly} placeholder="mm:ss — e.g. 30:37" onChange={(event) => set({ regTime1: event.target.value })}/>,
     regTime2: <input value={metrics.regTime2 ?? ""} readOnly={readOnly} placeholder="h:mm — e.g. 1:34" onChange={(event) => set({ regTime2: event.target.value })}/>,
     vanOption: <input type="number" min="0" inputMode="numeric" value={metrics.vanOption ?? ""} readOnly={readOnly} placeholder="e.g. 11" onChange={(event) => set({ vanOption: num(event.target.value) })}/>,
+    qcNotes: <input type="number" min="0" inputMode="numeric" value={metrics.qcNotes ?? ""} readOnly={readOnly} placeholder="e.g. 3" onChange={(event) => set({ qcNotes: num(event.target.value) })}/>,
     waitingTime: <input value={metrics.waitingTime ?? ""} readOnly={readOnly} placeholder="m:ss — e.g. 19:39" onChange={(event) => set({ waitingTime: event.target.value })}/>,
   };
-  const hints: Record<string, string> = { incidents: isDispatcherTemplate({ name: title }) || title.startsWith("Dispatch") ? "Total incidents handled" : "Total incidents registered", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds", startTime: "Average, minutes:seconds", regTime1: "Average, minutes:seconds", regTime2: "Average, hours:minutes", vanOption: "Total van option taken" };
+  const hints: Record<string, string> = { incidents: isDispatcherTemplate({ name: title }) || title.startsWith("Dispatch") ? "Total incidents handled" : "Total incidents registered", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds", startTime: "Average, minutes:seconds", regTime1: "Average, minutes:seconds", regTime2: "Average, hours:minutes", vanOption: "Total van option taken", qcNotes: "Total QC notes received" };
   return <section className="metrics-block">
     <div className="metrics-head"><div><strong>{title}</strong><small>Fill in the numbers from Pulse — the level and points are calculated automatically.</small></div>
       <div className="metrics-total"><small>Metric points</small><b>{scored.total}<em>/ {scored.max}</em></b></div></div>

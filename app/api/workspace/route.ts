@@ -101,7 +101,7 @@ function cleanFormData(raw: unknown) {
     metrics: (() => {
       const m = (data.metrics && typeof data.metrics === "object" ? data.metrics : {}) as Record<string, unknown>;
       const num = (v: unknown) => { if (v === "" || v == null) return null; const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(1000000, Math.round(n))) : null; };
-      return { incidents: num(m.incidents), calls: num(m.calls), dispatchTime: text(m.dispatchTime, 12), waitingTime: text(m.waitingTime, 12), startTime: text(m.startTime, 12), regTime1: text(m.regTime1, 12), regTime2: text(m.regTime2, 12), vanOption: num(m.vanOption) };
+      return { incidents: num(m.incidents), calls: num(m.calls), dispatchTime: text(m.dispatchTime, 12), waitingTime: text(m.waitingTime, 12), startTime: text(m.startTime, 12), regTime1: text(m.regTime1, 12), regTime2: text(m.regTime2, 12), vanOption: num(m.vanOption), qcNotes: num(m.qcNotes) };
     })(),
   };
 }

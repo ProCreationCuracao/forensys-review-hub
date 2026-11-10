@@ -182,6 +182,7 @@ export type DispatchMetrics = {
   regTime1?: string;               // agent: average registration time part 1 "mm:ss"
   regTime2?: string;               // agent: average registration time final "h:mm"
   vanOption?: number | null;       // agent: van option shifts taken
+  qcNotes?: number | null;         // agent: quality control notes received
 };
 export const EMPTY_METRICS: DispatchMetrics = { incidents: null, calls: null, dispatchTime: "", waitingTime: "" };
 
@@ -194,7 +195,7 @@ export const METRIC_LEVELS = [
 ] as const;
 
 type Bracket = { level: number; text: string; test: (v: number) => boolean; points?: number; label?: string };
-export type MetricDef = { key: "incidents" | "calls" | "dispatchTime" | "waitingTime" | "startTime" | "regTime1" | "regTime2" | "vanOption"; label: string; unit: string; maxPoints: number; brackets: Bracket[] };
+export type MetricDef = { key: "incidents" | "calls" | "dispatchTime" | "waitingTime" | "startTime" | "regTime1" | "regTime2" | "vanOption" | "qcNotes"; label: string; unit: string; maxPoints: number; brackets: Bracket[] };
 
 export const DISPATCH_METRICS: MetricDef[] = [
   { key: "incidents", label: "Incidents handled", unit: "incidents", maxPoints: 10, brackets: [
@@ -232,6 +233,11 @@ export const AGENT_METRICS: MetricDef[] = [
     { level: 5, label: "Good", points: 5, text: "11 or more", test: (v) => v >= 11 },
     { level: 3, label: "Average", points: 3, text: "6 – 10", test: (v) => v >= 6 },
     { level: 1, label: "Bad", points: 0, text: "0 – 5", test: () => true }] },
+  // Bracket not yet confirmed from Pulse — fewer QC notes is better.
+  { key: "qcNotes", label: "Quality control notes", unit: "notes", maxPoints: 10, brackets: [
+    { level: 5, label: "Good", points: 10, text: "0 – 5", test: (v) => v <= 5 },
+    { level: 3, label: "Average", points: 5, text: "6 – 10", test: (v) => v <= 10 },
+    { level: 1, label: "Bad", points: 0, text: "11 or more", test: () => true }] },
 ];
 export const metricDefsFor = (template: { department?: string | null; name?: string } | null | undefined) => isDispatcherTemplate(template) ? DISPATCH_METRICS : AGENT_METRICS;
 
@@ -258,6 +264,7 @@ export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null
     startTime: (() => { const v = parseMinutes(m.startTime ?? ""); return { value: v, display: v == null ? "—" : `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")} min` }; })(),
     regTime1: (() => { const v = parseMinutes(m.regTime1 ?? ""); return { value: v, display: v == null ? "—" : `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")} min` }; })(),
     regTime2: (() => { const v = parseMinutes(m.regTime2 ?? ""); return { value: v, display: v == null ? "—" : `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")} hrs` }; })(),
+    qcNotes: { value: m.qcNotes ?? null, display: m.qcNotes == null ? "—" : String(m.qcNotes) },
     vanOption: { value: m.vanOption ?? null, display: m.vanOption == null ? "—" : String(m.vanOption) },
     waitingTime: { value: waitSecs, display: waitSecs == null ? "—" : `${Math.floor(waitSecs / 60)}:${String(waitSecs % 60).padStart(2, "0")} min` },
   };
