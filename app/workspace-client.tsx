@@ -7,7 +7,7 @@ import {
   Users, X, Clock3, Pencil, UserRound, BarChart3, LockKeyhole, Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { bonusRateFor, pct, computeOverallScore, EMPTY_FORM_DATA, EMPTY_METRICS, METRIC_LEVELS, RATING_TONE, bandForScore, isDispatcherTemplate, parseMinutes, scoreDispatchMetrics, type DispatchMetrics } from "../lib/evaluation-forms";
+import { metricDefsFor, type MetricDef, bonusRateFor, pct, computeOverallScore, EMPTY_FORM_DATA, EMPTY_METRICS, METRIC_LEVELS, RATING_TONE, bandForScore, isDispatcherTemplate, parseMinutes, scoreDispatchMetrics, type DispatchMetrics } from "../lib/evaluation-forms";
 import type { EvalFormData, EvalTemplate, FormSection, ItemAnswer, ItemRating, ScoreBand } from "../lib/evaluation-forms";
 
 type Role = "hr_admin" | "manager" | "employee";
@@ -586,10 +586,11 @@ function ReviewForm({ review, employee, employees, cycle, templates, isEmployee,
 
 function esc(value: unknown) { return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] as string)); }
 function longDate(value?: string) { if (!value) return "____________________"; const d = new Date(`${value.slice(0, 10)}T12:00:00`); return Number.isNaN(d.getTime()) ? esc(value) : new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(d); }
-function metricsHtml(form: EvalFormData) {
-  const scored = scoreDispatchMetrics(form.metrics);
+function metricsHtml(form: EvalFormData, template: EvalTemplate) {
+  const scored = scoreDispatchMetrics(form.metrics, metricDefsFor(template));
+  const title = isDispatcherTemplate(template) ? "Dispatch performance metrics" : "Agent performance metrics";
   const rows = scored.results.map((r) => `<tr><td class="item">${esc(r.def.label)}</td><td>${esc(r.display)}</td><td>${esc(r.bracket || "—")}</td><td>${r.level ? esc(METRIC_LEVELS.find((l) => l.level === r.level)?.label) : "—"}</td><td class="x">${r.points ?? "—"} / ${r.def.maxPoints}</td></tr>`).join("");
-  return `<table class="grid"><thead><tr><th class="item">Dispatch performance metrics</th><th>Result</th><th>Bracket</th><th>Level</th><th>Points</th></tr></thead><tbody>${rows}<tr><td class="item"><b>Total metric points</b></td><td colspan="3"></td><td class="x">${scored.total} / ${scored.max}</td></tr></tbody></table>`;
+  return `<table class="grid"><thead><tr><th class="item">${title}</th><th>Result</th><th>Bracket</th><th>Level</th><th>Points</th></tr></thead><tbody>${rows}<tr><td class="item"><b>Total metric points</b></td><td colspan="3"></td><td class="x">${scored.total} / ${scored.max}</td></tr></tbody></table>`;
 }
 function printEvaluation({ employee, stage, form, template, acknowledged }: { employee: Employee | null; stage: Stage; form: EvalFormData; template: EvalTemplate; acknowledged: boolean }) {
   const overall = computeOverallScore(template, form);
@@ -614,7 +615,7 @@ function printEvaluation({ employee, stage, form, template, acknowledged }: { em
   <tr><td colspan="2"><b>Supervisor / Name and Title:</b> ${esc(form.supervisor)}</td></tr></table>
   <div class="score"><table class="bands"><thead><tr><th>Overall evaluation score</th><th>Achievement Results Rating</th></tr></thead><tbody>${bands}</tbody></table>
   <div class="result">Overall evaluation score<strong>${overall.score ?? "&mdash;"}</strong><small>${overall.parts.map((part) => `${esc(part.label)} (${part.weight}%): ${esc(part.detail)}`).join(" &middot; ")}</small><br>${band ? `${band.rating} = ${esc(band.label)}` : "No rating"}</div></div>
-  ${isDispatcherTemplate(template) ? metricsHtml(form) : ""}
+  ${metricsHtml(form, template)}
   ${sections}
   <div class="box"><h3>Supervisor Feedback &mdash; support to be provided (training, equipment, observation, procedures, coaching)</h3>${esc(form.supervisorSupport)}</div>
   <div class="box"><h3>Employee Feedback</h3>${esc(form.employeeFeedback)}</div>
@@ -633,8 +634,8 @@ const RATING_CHOICES: Array<{ value: ItemRating; label: string }> = [
   { value: "exceptional", label: "Exceptional" },
 ];
 
-function DispatchMetricsBlock({ metrics, readOnly, onChange }: { metrics: DispatchMetrics; readOnly: boolean; onChange: (next: DispatchMetrics) => void }) {
-  const scored = scoreDispatchMetrics(metrics);
+function DispatchMetricsBlock({ metrics, readOnly, onChange, defs, title }: { metrics: DispatchMetrics; readOnly: boolean; onChange: (next: DispatchMetrics) => void; defs: MetricDef[]; title: string }) {
+  const scored = scoreDispatchMetrics(metrics, defs);
   const set = (patch: Partial<DispatchMetrics>) => onChange({ ...metrics, ...patch });
   const num = (value: string) => value === "" ? null : Math.max(0, Math.round(Number(value)));
   const inputs: Record<string, React.ReactNode> = {
@@ -643,9 +644,9 @@ function DispatchMetricsBlock({ metrics, readOnly, onChange }: { metrics: Dispat
     dispatchTime: <input value={metrics.dispatchTime} readOnly={readOnly} placeholder="m:ss — e.g. 4:07" onChange={(event) => set({ dispatchTime: event.target.value })}/>,
     waitingTime: <input value={metrics.waitingTime ?? ""} readOnly={readOnly} placeholder="m:ss — e.g. 19:39" onChange={(event) => set({ waitingTime: event.target.value })}/>,
   };
-  const hints: Record<string, string> = { incidents: "Total incidents handled", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds" };
+  const hints: Record<string, string> = { incidents: isDispatcherTemplate({ name: title }) || title.startsWith("Dispatch") ? "Total incidents handled" : "Total incidents registered", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds" };
   return <section className="metrics-block">
-    <div className="metrics-head"><div><strong>Dispatch performance metrics</strong><small>Fill in the numbers from Pulse — the level and points are calculated automatically.</small></div>
+    <div className="metrics-head"><div><strong>{title}</strong><small>Fill in the numbers from Pulse — the level and points are calculated automatically.</small></div>
       <div className="metrics-total"><small>Metric points</small><b>{scored.total}<em>/ {scored.max}</em></b></div></div>
     <div className="metrics-grid">{scored.results.map((result) => { const level = METRIC_LEVELS.find((item) => item.level === result.level); const rawTime = result.def.key === "dispatchTime" ? metrics.dispatchTime : result.def.key === "waitingTime" ? (metrics.waitingTime ?? "") : ""; const bad = rawTime.trim() !== "" && parseMinutes(rawTime) == null; return <div className={`metric-card${level ? ` lvl-${level.level}` : ""}`} key={result.def.key}>
       <div className="metric-top"><span className="metric-label">{result.def.label}</span><span className="metric-max">max {result.def.maxPoints} pts</span></div>
@@ -685,7 +686,7 @@ function EvaluationFormFields({ form, setForm, template, templates, readOnly, ac
         <div className="overall-parts">{overall.parts.map((part) => <div className="overall-part" key={part.key}><span className="op-top"><span>{part.label}</span><em>{part.weight}%</em></span><span className="op-bar"><i style={{ width: `${part.value ?? 0}%` }}/></span><small>{part.value == null ? part.detail : `${Math.round(part.value)} · ${part.detail}`}</small></div>)}</div>
         <span className="eval-band-scale">Rating: {[...template.scoreBands].sort((a, b) => a.min - b.min).map((item) => `${item.min === 0 ? `≤${item.max}` : `${item.min}–${item.max}`} → ${item.rating}`).join("  ·  ")}</span></div>
     </div>
-    {isDispatcherTemplate(template) && <DispatchMetricsBlock metrics={{ ...EMPTY_METRICS, ...(form.metrics ?? {}) }} readOnly={readOnly} onChange={(metrics) => set({ metrics })}/>}
+    {template && <DispatchMetricsBlock defs={metricDefsFor(template)} title={isDispatcherTemplate(template) ? "Dispatch performance metrics" : "Agent performance metrics"} metrics={{ ...EMPTY_METRICS, ...(form.metrics ?? {}) }} readOnly={readOnly} onChange={(metrics) => set({ metrics })}/>}
     {template.sections.map((section) => <section className="eval-block" key={section.key}>
       <div className="eval-block-head"><strong>{section.title}</strong><small>{section.items.length} items</small></div>
       <div className="eval-table-wrap"><table className="eval-table"><thead><tr><th>Item</th>{RATING_CHOICES.map((choice) => <th key={choice.value}>{choice.label}</th>)}<th>Notes</th></tr></thead><tbody>

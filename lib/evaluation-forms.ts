@@ -207,6 +207,14 @@ export const DISPATCH_METRICS: MetricDef[] = [
     { level: 3, text: "20:01 – 22:00", test: (s) => s <= 1320 }, { level: 2, text: "22:01 – 25:00", test: (s) => s <= 1500 }, { level: 1, text: "25:01 or more", test: () => true }] },
 ];
 
+/** Agent metrics (Pulse "Incidents Registered", monthly total). More items can be added here. */
+export const AGENT_METRICS: MetricDef[] = [
+  { key: "incidents", label: "Incidents registered", unit: "incidents", maxPoints: 10, brackets: [
+    { level: 5, text: "61 or more", test: (v) => v >= 61 }, { level: 4, text: "51 – 60", test: (v) => v >= 51 },
+    { level: 3, text: "41 – 50", test: (v) => v >= 41 }, { level: 2, text: "21 – 40", test: (v) => v >= 21 }, { level: 1, text: "0 – 20", test: () => true }] },
+];
+export const metricDefsFor = (template: { department?: string | null; name?: string } | null | undefined) => isDispatcherTemplate(template) ? DISPATCH_METRICS : AGENT_METRICS;
+
 /** "4:07", "4.07" or "4" → seconds. */
 export function parseMinutes(value: string): number | null {
   const v = (value || "").trim().replace(",", ".");
@@ -219,7 +227,7 @@ export function parseMinutes(value: string): number | null {
 }
 
 export type MetricResult = { def: MetricDef; value: number | null; display: string; level: number | null; points: number | null; bracket: string };
-export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null) {
+export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null, defs: MetricDef[] = DISPATCH_METRICS) {
   const m = { ...EMPTY_METRICS, ...(metrics ?? {}) };
   const waitSecs = parseMinutes(m.waitingTime ?? "");
   const secs = parseMinutes(m.dispatchTime);
@@ -229,7 +237,7 @@ export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null
     dispatchTime: { value: secs, display: secs == null ? "—" : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} min` },
     waitingTime: { value: waitSecs, display: waitSecs == null ? "—" : `${Math.floor(waitSecs / 60)}:${String(waitSecs % 60).padStart(2, "0")} min` },
   };
-  const results: MetricResult[] = DISPATCH_METRICS.map((def) => {
+  const results: MetricResult[] = defs.map((def) => {
     const { value, display } = values[def.key];
     if (value == null) return { def, value, display, level: null, points: null, bracket: "" };
     const hit = def.brackets.find((b) => b.test(value))!;
@@ -237,7 +245,7 @@ export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null
   });
   const scored = results.filter((r) => r.points != null);
   const total = scored.reduce((sum, r) => sum + (r.points ?? 0), 0);
-  const max = DISPATCH_METRICS.reduce((sum, d) => sum + d.maxPoints, 0);
+  const max = defs.reduce((sum, d) => sum + d.maxPoints, 0);
   return { results, total, max, complete: scored.length === results.length };
 }
 export function isDispatcherTemplate(template: { department?: string | null; name?: string } | null | undefined) {
