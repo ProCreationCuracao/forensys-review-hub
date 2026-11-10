@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForenSys Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--red:#c11f30;--red2:#e5394a;--ink:#16161a;--muted:#6c6c75;--line:rgba(20,20,30,.08)}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink);background:#f4f4f6;overflow-x:hidden}
+  /* background: soft grid + red glow + radar rings (the pin target from the logo) */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(900px 500px at 50% -10%,rgba(193,31,48,.16),transparent 60%),
+      radial-gradient(700px 500px at 100% 100%,rgba(90,90,98,.12),transparent 60%),
+      linear-gradient(rgba(20,20,30,.035) 1px,transparent 1px) 0 0/44px 44px,
+      linear-gradient(90deg,rgba(20,20,30,.035) 1px,transparent 1px) 0 0/44px 44px,#f4f4f6}
+  .radar{position:fixed;left:50%;top:210px;width:0;height:0;z-index:0;pointer-events:none}
+  .radar i{position:absolute;left:0;top:0;border:1.5px solid rgba(193,31,48,.35);border-radius:50%;transform:translate(-50%,-50%) scale(.2);width:900px;height:300px;opacity:0;animation:ping 6s cubic-bezier(.2,.6,.3,1) infinite}
+  .radar i:nth-child(2){animation-delay:2s}.radar i:nth-child(3){animation-delay:4s}
+  @keyframes ping{0%{transform:translate(-50%,-50%) scale(.15);opacity:.9}100%{transform:translate(-50%,-50%) scale(1.3);opacity:0}}
+  .wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:56px 28px 40px;display:flex;flex-direction:column;min-height:100vh}
+  .hero{text-align:center;animation:rise .8s ease both}
+  .hero img{width:min(520px,86vw);height:auto;filter:drop-shadow(0 18px 30px rgba(20,20,30,.12))}
+  .hero .tag{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);backdrop-filter:blur(8px);font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1fbf6a;box-shadow:0 0 0 0 rgba(31,191,106,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(31,191,106,0)}100%{box-shadow:0 0 0 0 rgba(31,191,106,0)}}
+  .greet{margin:26px 0 6px;font-size:clamp(26px,3.6vw,38px);font-weight:800;letter-spacing:-.03em}
+  .greet span{background:linear-gradient(90deg,var(--red),var(--red2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{margin:0;color:var(--muted);font-size:15.5px}
+  .clock{margin-top:8px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .grid{margin-top:44px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}
+  a.app{position:relative;display:flex;flex-direction:column;gap:14px;padding:26px;border-radius:20px;text-decoration:none;color:inherit;
+    background:rgba(255,255,255,.82);border:1px solid var(--line);backdrop-filter:blur(14px);
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(20,20,30,.05);overflow:hidden;
+    transition:transform .25s cubic-bezier(.2,.7,.3,1),box-shadow .25s,border-color .25s;animation:rise .7s ease both}
+  a.app:nth-child(1){animation-delay:.12s}a.app:nth-child(2){animation-delay:.22s}a.app:nth-child(3){animation-delay:.32s}
+  a.app::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--red),var(--red2));transform:scaleX(0);transform-origin:left;transition:transform .35s}
+  a.app::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(193,31,48,.12),transparent 70%);transition:transform .4s}
+  a.app:hover{transform:translateY(-6px);border-color:rgba(193,31,48,.25);box-shadow:0 24px 50px rgba(193,31,48,.14),0 2px 6px rgba(0,0,0,.05)}
+  a.app:hover::before{transform:scaleX(1)}a.app:hover::after{transform:scale(1.35)}
+  .ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,var(--red2),var(--red));box-shadow:0 10px 22px rgba(193,31,48,.32),inset 0 1px 0 rgba(255,255,255,.3)}
+  .ic svg{width:27px;height:27px}
+  .app h2{margin:4px 0 0;font-size:21px;letter-spacing:-.02em}
+  .app p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.55;flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chips span{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;background:#f2f2f5;color:#55555e}
+  .go{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .go b{display:inline-flex;align-items:center;gap:6px;color:var(--red);font-weight:700;font-size:14px}
+  .go b svg{width:16px;height:16px;transition:transform .25s}
+  a.app:hover .go b svg{transform:translateX(4px)}
+  footer{margin-top:auto;padding-top:48px;text-align:center;color:var(--muted);font-size:12.5px}
+  footer b{color:var(--ink)}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .sec{display:flex;align-items:center;gap:14px;margin:46px 0 18px;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+  .sec i{flex:1;height:1px;background:linear-gradient(90deg,rgba(193,31,48,.35),transparent)}
+  .grid{margin-top:0!important}
+  .core{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  a.feat{padding:30px;min-height:290px;background:linear-gradient(160deg,#1d1d22 0%,#26262c 55%,#3a1218 100%);color:#fff;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(20,20,30,.22)}
+  a.feat::after{background:radial-gradient(circle,rgba(229,57,74,.45),transparent 70%);width:240px;height:240px;right:-70px;top:-70px}
+  a.feat p,a.feat .go{color:rgba(255,255,255,.65)}
+  a.feat .go{border-top-color:rgba(255,255,255,.12)}
+  a.feat .go b{color:#ff6b78}
+  a.feat .chips span{background:rgba(255,255,255,.09);color:rgba(255,255,255,.85)}
+  a.feat h2{font-size:25px}
+  a.feat:hover{box-shadow:0 30px 70px rgba(193,31,48,.35);border-color:rgba(229,57,74,.5)}
+  .rank{position:absolute;right:24px;top:18px;font-style:normal;font-size:46px;font-weight:800;letter-spacing:-.04em;color:rgba(255,255,255,.07)}
+  .more{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  a.mini{padding:20px;gap:10px}
+  a.mini .ic{width:44px;height:44px;border-radius:12px}a.mini .ic svg{width:22px;height:22px}
+  a.mini h2{font-size:18px}
+  a.app:nth-child(4){animation-delay:.42s}a.app:nth-child(5){animation-delay:.5s}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="radar"><i></i><i></i><i></i></div>
+<div class="wrap">
+  <section class="hero">
+    <img src="/forensys-logo.png" alt="ForenSys — your eyes on the scene">
+    <div><span class="tag"><span class="dot"></span>Operations portal</span></div>
+    <h1 class="greet"><span id="hello">Welcome</span>, team.</h1>
+    <p class="sub">Everything for ForenSys in one place. Choose where you want to go.</p>
+    <div class="clock" id="clock"></div>
+  </section>
+
+  <div class="sec"><span>Core systems</span><i></i></div>
+  <nav class="grid core">
+    <a class="app feat" href="https://digitalFNOL.struqtive.com" target="_blank" rel="noopener"><em class="rank">01</em>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></div>
+      <h2>Digital FNOL</h2><p>First notice of loss: register and follow up incoming claims and incidents.</p>
+      <div class="chips"><span>Claims</span><span>Incidents</span><span>Registration</span></div>
+      <div class="go"><span>digitalfnol.struqtive.com</span><b>Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></b></div></a>
+    <a class="app feat" href="https://dispatch.forensys.com" target="_blank" rel="noopener"><em class="rank">02</em>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
+      <h2>Dispatch</h2><p>Live dispatching: send agents to the scene and track every job.</p>
+      <div class="chips"><span>Live jobs</span><span>Agents</span><span>Company: forensyscuracao</span></div>
+      <div class="go"><span>dispatch.forensys.com</span><b>Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></b></div></a>
+    <a class="app feat" href="https://pulse.forensys.com" target="_blank" rel="noopener"><em class="rank">03</em>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <h2>Pulse</h2><p>Operations data: monthly stats and score analysis for agents and dispatchers.</p>
+      <div class="chips"><span>Monthly stats</span><span>Score analysis</span></div>
+      <div class="go"><span>pulse.forensys.com</span><b>Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></b></div></a>
+  </nav>
+  <div class="sec"><span>More tools</span><i></i></div>
+  <nav class="grid more">
+    <a class="app mini" href="https://forensys-review-hub.vercel.app" target="_blank" rel="noopener">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <h2>Review Hub</h2><p>Agent and dispatcher evaluations, ratings and dashboards.</p>
+      <div class="chips"><span>Evaluations</span></div>
+      <div class="go"><span>forensys-review-hub.vercel.app</span><b>Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></b></div></a>
+    <a class="app mini" href="https://forensys.procreation.app" target="_blank" rel="noopener">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2"/></svg></div>
+      <h2>Schedule</h2><p>Shift planning and the team roster.</p>
+      <div class="chips"><span>Shifts</span></div>
+      <div class="go"><span>forensys.procreation.app</span><b>Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></b></div></a>
+  </nav>
+
+  <footer><b>ForenSys</b> · your eyes on the scene · powered by Anexxt</footer>
+</div>
+<script>
+  function tick(){
+    var d=new Date(), h=d.getHours();
+    document.getElementById('hello').textContent = h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+    document.getElementById('clock').textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+  tick(); setInterval(tick, 15000);
+</script>
+</body>
+</html>
