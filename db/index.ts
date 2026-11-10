@@ -7,7 +7,7 @@ import * as schema from "./schema";
 const globalForDb = globalThis as unknown as { __forensysSql?: ReturnType<typeof postgres> };
 
 export function getDb() {
-  const url = process.env.DATABASE_URL;
+  const url = process.env.FORENSYS_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set. Add the Supabase connection string to the environment.");
   globalForDb.__forensysSql ??= postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
   return drizzle(globalForDb.__forensysSql, { schema });

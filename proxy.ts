@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Keeps the Supabase login session fresh on every request.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_FORENSYS_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_FORENSYS_SUPABASE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
