@@ -174,9 +174,10 @@ export type DispatchMetrics = {
   incidents: number | null;        // total incidents handled
   calls: number | null;            // total calls handled
   dispatchTime: string;            // average dispatch time "m:ss"
-  longWaitCount: number | null;    // incidents with waiting time > 30 min
+  waitingTime: string;             // average waiting time "m:ss"
+  longWaitCount?: number | null;   // legacy (older evaluations)
 };
-export const EMPTY_METRICS: DispatchMetrics = { incidents: null, calls: null, dispatchTime: "", longWaitCount: null };
+export const EMPTY_METRICS: DispatchMetrics = { incidents: null, calls: null, dispatchTime: "", waitingTime: "" };
 
 export const METRIC_LEVELS = [
   { level: 5, label: "Exceptional", tone: "green" },
@@ -187,7 +188,7 @@ export const METRIC_LEVELS = [
 ] as const;
 
 type Bracket = { level: number; text: string; test: (v: number) => boolean };
-export type MetricDef = { key: keyof DispatchMetrics | "longWaitPct"; label: string; unit: string; maxPoints: number; brackets: Bracket[] };
+export type MetricDef = { key: "incidents" | "calls" | "dispatchTime" | "waitingTime"; label: string; unit: string; maxPoints: number; brackets: Bracket[] };
 
 export const DISPATCH_METRICS: MetricDef[] = [
   { key: "incidents", label: "Incidents handled", unit: "incidents", maxPoints: 10, brackets: [
@@ -199,9 +200,9 @@ export const DISPATCH_METRICS: MetricDef[] = [
   { key: "dispatchTime", label: "Dispatch time", unit: "min", maxPoints: 10, brackets: [
     { level: 5, text: "0:00 – 3:00", test: (s) => s <= 180 }, { level: 4, text: "3:01 – 4:00", test: (s) => s <= 240 },
     { level: 3, text: "4:01 – 4:30", test: (s) => s <= 270 }, { level: 2, text: "4:31 – 5:00", test: (s) => s <= 300 }, { level: 1, text: "5:01 or more", test: () => true }] },
-  { key: "longWaitPct", label: "Waiting time", unit: "%", maxPoints: 10, brackets: [
-    { level: 5, text: "0 – 7.99%", test: (p) => p < 8 }, { level: 4, text: "8 – 9.99%", test: (p) => p < 10 },
-    { level: 3, text: "10 – 12.99%", test: (p) => p < 13 }, { level: 2, text: "13 – 14.99%", test: (p) => p < 15 }, { level: 1, text: "15% or more", test: () => true }] },
+  { key: "waitingTime", label: "Waiting time", unit: "min", maxPoints: 10, brackets: [
+    { level: 5, text: "0:00 – 18:00", test: (s) => s <= 1080 }, { level: 4, text: "18:01 – 20:00", test: (s) => s <= 1200 },
+    { level: 3, text: "20:01 – 22:00", test: (s) => s <= 1320 }, { level: 2, text: "22:01 – 25:00", test: (s) => s <= 1500 }, { level: 1, text: "25:01 or more", test: () => true }] },
 ];
 
 /** "4:07", "4.07" or "4" → seconds. */
@@ -218,13 +219,13 @@ export function parseMinutes(value: string): number | null {
 export type MetricResult = { def: MetricDef; value: number | null; display: string; level: number | null; points: number | null; bracket: string };
 export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null) {
   const m = { ...EMPTY_METRICS, ...(metrics ?? {}) };
-  const pct = m.incidents && m.incidents > 0 && m.longWaitCount != null ? Math.round(m.longWaitCount / m.incidents * 10000) / 100 : null;
+  const waitSecs = parseMinutes(m.waitingTime ?? "");
   const secs = parseMinutes(m.dispatchTime);
   const values: Record<string, { value: number | null; display: string }> = {
     incidents: { value: m.incidents, display: m.incidents == null ? "—" : String(m.incidents) },
     calls: { value: m.calls, display: m.calls == null ? "—" : String(m.calls) },
     dispatchTime: { value: secs, display: secs == null ? "—" : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} min` },
-    longWaitPct: { value: pct, display: pct == null ? "—" : `${pct.toFixed(2)}% (${m.longWaitCount} of ${m.incidents})` },
+    waitingTime: { value: waitSecs, display: waitSecs == null ? "—" : `${Math.floor(waitSecs / 60)}:${String(waitSecs % 60).padStart(2, "0")} min` },
   };
   const results: MetricResult[] = DISPATCH_METRICS.map((def) => {
     const { value, display } = values[def.key];
@@ -235,7 +236,7 @@ export function scoreDispatchMetrics(metrics: DispatchMetrics | undefined | null
   const scored = results.filter((r) => r.points != null);
   const total = scored.reduce((sum, r) => sum + (r.points ?? 0), 0);
   const max = DISPATCH_METRICS.reduce((sum, d) => sum + d.maxPoints, 0);
-  return { results, total, max, complete: scored.length === results.length, longWaitPct: pct };
+  return { results, total, max, complete: scored.length === results.length };
 }
 export function isDispatcherTemplate(template: { department?: string | null; name?: string } | null | undefined) {
   return Boolean(template && `${template.department ?? ""} ${template.name ?? ""}`.toLowerCase().includes("dispatch"));

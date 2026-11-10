@@ -640,15 +640,15 @@ function DispatchMetricsBlock({ metrics, readOnly, onChange }: { metrics: Dispat
     incidents: <input type="number" min="0" inputMode="numeric" value={metrics.incidents ?? ""} readOnly={readOnly} placeholder="e.g. 196" onChange={(event) => set({ incidents: num(event.target.value) })}/>,
     calls: <input type="number" min="0" inputMode="numeric" value={metrics.calls ?? ""} readOnly={readOnly} placeholder="e.g. 559" onChange={(event) => set({ calls: num(event.target.value) })}/>,
     dispatchTime: <input value={metrics.dispatchTime} readOnly={readOnly} placeholder="m:ss — e.g. 4:07" onChange={(event) => set({ dispatchTime: event.target.value })}/>,
-    longWaitPct: <input type="number" min="0" inputMode="numeric" value={metrics.longWaitCount ?? ""} readOnly={readOnly} placeholder="e.g. 31" onChange={(event) => set({ longWaitCount: num(event.target.value) })}/>,
+    waitingTime: <input value={metrics.waitingTime ?? ""} readOnly={readOnly} placeholder="m:ss — e.g. 19:39" onChange={(event) => set({ waitingTime: event.target.value })}/>,
   };
-  const hints: Record<string, string> = { incidents: "Total incidents handled", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", longWaitPct: scored.longWaitPct != null ? `${scored.longWaitPct.toFixed(2)}% waited over 30 min` : "Incidents waiting over 30 min" };
+  const hints: Record<string, string> = { incidents: "Total incidents handled", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds" };
   return <section className="metrics-block">
     <div className="metrics-head"><div><strong>Dispatch performance metrics</strong><small>Fill in the numbers from Pulse — the level and points are calculated automatically.</small></div>
       <div className="metrics-total"><small>Metric points</small><b>{scored.total}<em>/ {scored.max}</em></b></div></div>
-    <div className="metrics-grid">{scored.results.map((result) => { const level = METRIC_LEVELS.find((item) => item.level === result.level); const bad = parseMinutes(metrics.dispatchTime) == null && result.def.key === "dispatchTime" && metrics.dispatchTime.trim() !== ""; return <div className={`metric-card${level ? ` lvl-${level.level}` : ""}`} key={result.def.key}>
+    <div className="metrics-grid">{scored.results.map((result) => { const level = METRIC_LEVELS.find((item) => item.level === result.level); const rawTime = result.def.key === "dispatchTime" ? metrics.dispatchTime : result.def.key === "waitingTime" ? (metrics.waitingTime ?? "") : ""; const bad = rawTime.trim() !== "" && parseMinutes(rawTime) == null; return <div className={`metric-card${level ? ` lvl-${level.level}` : ""}`} key={result.def.key}>
       <div className="metric-top"><span className="metric-label">{result.def.label}</span><span className="metric-max">max {result.def.maxPoints} pts</span></div>
-      <label className="metric-input">{inputs[result.def.key]}<span>{result.def.key === "longWaitPct" ? "incidents" : result.def.unit}</span></label>
+      <label className="metric-input">{inputs[result.def.key]}<span>{result.def.unit}</span></label>
       <small className={bad ? "metric-hint err" : "metric-hint"}>{bad ? "Use minutes:seconds, e.g. 4:07" : hints[result.def.key]}</small>
       <div className="metric-result">{level ? <><span className={`metric-level tone-bg-${level.tone}`}>{level.label}</span><span className="metric-points"><b>{result.points}</b> pts</span></> : <span className="metric-empty">Waiting for input</span>}</div>
       <div className="metric-scale" aria-label="Grading bracket">{[...result.def.brackets].reverse().map((bracket) => <span key={bracket.level} className={result.level === bracket.level ? "on" : ""} title={`${bracket.text} → ${METRIC_LEVELS.find((item) => item.level === bracket.level)?.label}`}><i>{bracket.text}</i></span>)}</div>
