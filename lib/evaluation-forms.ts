@@ -249,7 +249,18 @@ export function isDispatcherTemplate(template: { department?: string | null; nam
 // Weights per form type; a part with no input is left out and the rest re-weighted.
 // ---------------------------------------------------------------------------
 export const ITEM_VALUE: Record<string, number> = { exceptional: 100, good: 80, needs_improvement: 40 };
-export const SCORE_WEIGHTS = { dispatcher: { pulse: 40, metrics: 30, items: 30 }, other: { pulse: 50, metrics: 0, items: 50 } };
+// Matches 2026_OP_Stats_per_Employee.xlsx: the rating is the average monthly Pulse score; metrics and items are shown for context only.
+export const SCORE_WEIGHTS = { dispatcher: { pulse: 100, metrics: 0, items: 0 }, other: { pulse: 100, metrics: 0, items: 0 } };
+
+/** Bonus rate as in the Overview sheet: >=80 -> 85%, >=70 -> 75%, >=65 -> 50%, else 0. Hired in the evaluation year -> x 0.75. */
+export function bonusRateFor(score: number | null | undefined, employmentDate?: string, evaluationDate?: string): { rate: number; base: number; newHire: boolean } | null {
+  if (score == null || !Number.isFinite(score)) return null;
+  const base = score >= 80 ? 0.85 : score >= 70 ? 0.75 : score >= 65 ? 0.5 : 0;
+  const evalYear = (evaluationDate || new Date().toISOString()).slice(0, 4);
+  const newHire = Boolean(employmentDate && employmentDate.slice(0, 4) === evalYear);
+  return { rate: Math.round(base * (newHire ? 0.75 : 1) * 10000) / 10000, base, newHire };
+}
+export const pct = (n: number) => `${Math.round(n * 10000) / 100}%`;
 
 export type ScorePart = { key: "pulse" | "metrics" | "items"; label: string; weight: number; value: number | null; detail: string };
 export function computeOverallScore(template: { sections: FormSection[]; department?: string | null; name?: string } | null | undefined, form: Pick<EvalFormData, "pulseScore" | "items" | "metrics">) {
