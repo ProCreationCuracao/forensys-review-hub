@@ -589,7 +589,7 @@ function longDate(value?: string) { if (!value) return "____________________"; c
 function metricsHtml(form: EvalFormData, template: EvalTemplate) {
   const scored = scoreDispatchMetrics(form.metrics, metricDefsFor(template));
   const title = isDispatcherTemplate(template) ? "Dispatch performance metrics" : "Agent performance metrics";
-  const rows = scored.results.map((r) => `<tr><td class="item">${esc(r.def.label)}</td><td>${esc(r.display)}</td><td>${esc(r.bracket || "—")}</td><td>${r.level ? esc(METRIC_LEVELS.find((l) => l.level === r.level)?.label) : "—"}</td><td class="x">${r.points ?? "—"} / ${r.def.maxPoints}</td></tr>`).join("");
+  const rows = scored.results.map((r) => `<tr><td class="item">${esc(r.def.label)}</td><td>${esc(r.display)}</td><td>${esc(r.bracket || "—")}</td><td>${r.level ? esc(r.label ?? METRIC_LEVELS.find((l) => l.level === r.level)?.label) : "—"}</td><td class="x">${r.points ?? "—"} / ${r.def.maxPoints}</td></tr>`).join("");
   return `<table class="grid"><thead><tr><th class="item">${title}</th><th>Result</th><th>Bracket</th><th>Level</th><th>Points</th></tr></thead><tbody>${rows}<tr><td class="item"><b>Total metric points</b></td><td colspan="3"></td><td class="x">${scored.total} / ${scored.max}</td></tr></tbody></table>`;
 }
 function printEvaluation({ employee, stage, form, template, acknowledged }: { employee: Employee | null; stage: Stage; form: EvalFormData; template: EvalTemplate; acknowledged: boolean }) {
@@ -642,18 +642,22 @@ function DispatchMetricsBlock({ metrics, readOnly, onChange, defs, title }: { me
     incidents: <input type="number" min="0" inputMode="numeric" value={metrics.incidents ?? ""} readOnly={readOnly} placeholder="e.g. 196" onChange={(event) => set({ incidents: num(event.target.value) })}/>,
     calls: <input type="number" min="0" inputMode="numeric" value={metrics.calls ?? ""} readOnly={readOnly} placeholder="e.g. 559" onChange={(event) => set({ calls: num(event.target.value) })}/>,
     dispatchTime: <input value={metrics.dispatchTime} readOnly={readOnly} placeholder="m:ss — e.g. 4:07" onChange={(event) => set({ dispatchTime: event.target.value })}/>,
+    startTime: <input value={metrics.startTime ?? ""} readOnly={readOnly} placeholder="m:ss — e.g. 2:01" onChange={(event) => set({ startTime: event.target.value })}/>,
+    regTime1: <input value={metrics.regTime1 ?? ""} readOnly={readOnly} placeholder="mm:ss — e.g. 30:37" onChange={(event) => set({ regTime1: event.target.value })}/>,
+    regTime2: <input value={metrics.regTime2 ?? ""} readOnly={readOnly} placeholder="h:mm — e.g. 1:34" onChange={(event) => set({ regTime2: event.target.value })}/>,
+    vanOption: <input type="number" min="0" inputMode="numeric" value={metrics.vanOption ?? ""} readOnly={readOnly} placeholder="e.g. 11" onChange={(event) => set({ vanOption: num(event.target.value) })}/>,
     waitingTime: <input value={metrics.waitingTime ?? ""} readOnly={readOnly} placeholder="m:ss — e.g. 19:39" onChange={(event) => set({ waitingTime: event.target.value })}/>,
   };
-  const hints: Record<string, string> = { incidents: isDispatcherTemplate({ name: title }) || title.startsWith("Dispatch") ? "Total incidents handled" : "Total incidents registered", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds" };
+  const hints: Record<string, string> = { incidents: isDispatcherTemplate({ name: title }) || title.startsWith("Dispatch") ? "Total incidents handled" : "Total incidents registered", calls: "Total calls handled", dispatchTime: "Average, minutes:seconds", waitingTime: "Average, minutes:seconds", startTime: "Average, minutes:seconds", regTime1: "Average, minutes:seconds", regTime2: "Average, hours:minutes", vanOption: "Total van option taken" };
   return <section className="metrics-block">
     <div className="metrics-head"><div><strong>{title}</strong><small>Fill in the numbers from Pulse — the level and points are calculated automatically.</small></div>
       <div className="metrics-total"><small>Metric points</small><b>{scored.total}<em>/ {scored.max}</em></b></div></div>
-    <div className="metrics-grid">{scored.results.map((result) => { const level = METRIC_LEVELS.find((item) => item.level === result.level); const rawTime = result.def.key === "dispatchTime" ? metrics.dispatchTime : result.def.key === "waitingTime" ? (metrics.waitingTime ?? "") : ""; const bad = rawTime.trim() !== "" && parseMinutes(rawTime) == null; return <div className={`metric-card${level ? ` lvl-${level.level}` : ""}`} key={result.def.key}>
+    <div className="metrics-grid">{scored.results.map((result) => { const level = METRIC_LEVELS.find((item) => item.level === result.level); const rawTime = ["dispatchTime", "waitingTime", "startTime", "regTime1", "regTime2"].includes(result.def.key) ? String((metrics as Record<string, unknown>)[result.def.key] ?? "") : ""; const bad = rawTime.trim() !== "" && parseMinutes(rawTime) == null; return <div className={`metric-card${level ? ` lvl-${level.level}` : ""}`} key={result.def.key}>
       <div className="metric-top"><span className="metric-label">{result.def.label}</span><span className="metric-max">max {result.def.maxPoints} pts</span></div>
       <label className="metric-input">{inputs[result.def.key]}<span>{result.def.unit}</span></label>
-      <small className={bad ? "metric-hint err" : "metric-hint"}>{bad ? "Use minutes:seconds, e.g. 4:07" : hints[result.def.key]}</small>
-      <div className="metric-result">{level ? <><span className={`metric-level tone-bg-${level.tone}`}>{level.label}</span><span className="metric-points"><b>{result.points}</b> pts</span></> : <span className="metric-empty">Waiting for input</span>}</div>
-      <div className="metric-scale" aria-label="Grading bracket">{[...result.def.brackets].reverse().map((bracket) => <span key={bracket.level} className={result.level === bracket.level ? "on" : ""} title={`${bracket.text} → ${METRIC_LEVELS.find((item) => item.level === bracket.level)?.label}`}><i>{bracket.text}</i></span>)}</div>
+      <small className={bad ? "metric-hint err" : "metric-hint"}>{bad ? (result.def.key === "regTime2" ? "Use hours:minutes, e.g. 1:34" : "Use minutes:seconds, e.g. 4:07") : hints[result.def.key]}</small>
+      <div className="metric-result">{level ? <><span className={`metric-level tone-bg-${level.tone}`}>{result.label ?? level.label}</span><span className="metric-points"><b>{result.points}</b> pts</span></> : <span className="metric-empty">Waiting for input</span>}</div>
+      <div className="metric-scale" aria-label="Grading bracket">{[...result.def.brackets].reverse().map((bracket) => <span key={bracket.level} className={result.level === bracket.level ? "on" : ""} title={`${bracket.text} → ${bracket.label ?? METRIC_LEVELS.find((item) => item.level === bracket.level)?.label}${bracket.points != null ? ` (${bracket.points} pts)` : ""}`}><i>{bracket.text}</i></span>)}</div>
     </div>; })}</div>
   </section>;
 }
