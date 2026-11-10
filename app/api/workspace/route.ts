@@ -281,13 +281,20 @@ async function wouldCreateManagerCycle(employeeId: string, managerId: string | n
   return false;
 }
 
+/** Error summary for the logs — never includes connection strings or passwords. */
+function describeError(error: unknown): string {
+  const e = error as { message?: string; code?: string; cause?: { message?: string; code?: string } };
+  const parts = [e?.code, e?.message, e?.cause?.code, e?.cause?.message].filter(Boolean).map((v) => String(v).replace(/postgres(ql)?:\/\/[^@\s]*@/g, "postgresql://***@"));
+  return parts.join(" | ").slice(0, 500) || "unknown";
+}
+
 export async function GET() {
   try {
     const access = await requireMember();
     if (!access.member) return json({ error: access.error }, access.status);
     return json(await readWorkspace(access.member));
   } catch (error) {
-    console.error("workspace_read_failed");
+    console.error("workspace_read_failed", describeError(error));
     return json({ error: "The workspace could not be loaded. Please refresh and try again." }, 500);
   }
 }
@@ -600,8 +607,8 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
-    console.error("workspace_action_failed", body.action ?? "unknown");
-    if (message.includes("UNIQUE constraint failed")) return json({ error: "A record with those details already exists." }, 409);
+    console.error("workspace_action_failed", body.action ?? "unknown", describeError(error));
+    if (message.includes("UNIQUE constraint failed") || message.includes("duplicate key value")) return json({ error: "A record with those details already exists." }, 409);
     if (message.includes("no such table")) return json({ error: "The workspace database is not ready. Deploy the latest database setup and try again." }, 503);
     return json({ error: "The change could not be saved. Please review the information and try again." }, 500);
   }
