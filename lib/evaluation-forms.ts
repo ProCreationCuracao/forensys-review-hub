@@ -221,6 +221,14 @@ export const AGENT_METRICS: MetricDef[] = [
     { level: 5, label: "Good", points: 10, text: "0:00 – 2:30", test: (s) => s <= 150 },
     { level: 3, label: "Average", points: 5, text: "2:31 – 3:30", test: (s) => s <= 210 },
     { level: 1, label: "Bad", points: 0, text: "3:31 or more", test: () => true }] },
+  { key: "regTime1", label: "Registration time (part 1)", unit: "min", maxPoints: 10, brackets: [
+    { level: 5, label: "Great", points: 10, text: "0 – 35:00", test: (s) => s <= 2100 },
+    { level: 3, label: "Average", points: 5, text: "35:01 – 40:00", test: (s) => s <= 2400 },
+    { level: 1, label: "Bad", points: 0, text: "40:01 or more", test: () => true }] },
+  { key: "regTime2", label: "Registration time final (part 2)", unit: "hrs", maxPoints: 10, brackets: [
+    { level: 5, label: "Good", points: 10, text: "0:00 – 2:59", test: (m) => m <= 179 },
+    { level: 3, label: "Average", points: 5, text: "3:00 – 3:59", test: (m) => m <= 239 },
+    { level: 1, label: "Bad", points: 0, text: "4:00 or more", test: () => true }] },
   { key: "vanOption", label: "Van option shifts", unit: "shifts", maxPoints: 5, brackets: [
     { level: 5, label: "Good", points: 5, text: "11 or more", test: (v) => v >= 11 },
     { level: 3, label: "Average", points: 3, text: "6 – 10", test: (v) => v >= 6 },
