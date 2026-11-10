@@ -259,7 +259,7 @@ function AttentionPanel({ employees, reviews, onOpen }: { employees: Employee[];
 
 /** Overall evaluation score (falls back to the Pulse score for older evaluations). */
 function scoreOf(review?: Review | null): number | null { const f = review?.formData; if (!f) return null; return typeof f.overallScore === "number" ? f.overallScore : typeof f.pulseScore === "number" ? f.pulseScore : null; }
-const RATING_NAMES: Record<number, string> = { 1: "Unacceptable", 2: "Needs improvement", 3: "Good", 4: "Very good", 5: "Exceptional" };
+const RATING_NAMES: Record<number, string> = { 1: "Needs attention", 2: "Bad", 3: "Good", 4: "Very good", 5: "Exceptional" };
 function RatingChip({ rating }: { rating: number | null }) { return rating == null ? <span className="muted-dash">—</span> : <span className={`badge ${RATING_TONE[rating] ?? "neutral"}`}>{rating} · {RATING_NAMES[rating]}</span>; }
 function StageCell({ review }: { review?: Review }) {
   if (!review || review.status !== "completed") return <span className="stage-cell"><i className="dot grey"/>Not evaluated</span>;
@@ -711,11 +711,11 @@ function EvaluationFormFields({ form, setForm, template, templates, readOnly, ac
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const NEW_BANDS: ScoreBand[] = [
-  { min: 0, max: 59, rating: 1, label: "Unacceptable" },
-  { min: 60, max: 74, rating: 2, label: "Needs Improvement" },
-  { min: 75, max: 86, rating: 3, label: "Good" },
-  { min: 87, max: 96, rating: 4, label: "Very Good / Above Average" },
-  { min: 97, max: 100, rating: 5, label: "Exceptional / Outstanding" },
+  { min: 0, max: 59, rating: 1, label: "Needs attention" },
+      { min: 60, max: 69, rating: 2, label: "Bad" },
+      { min: 70, max: 80, rating: 3, label: "Good" },
+      { min: 81, max: 90, rating: 4, label: "Very good" },
+      { min: 91, max: 100, rating: 5, label: "Exceptional" },
 ];
 
 function TemplateForm({ template, busy, onCancel, onSave }: { template: EvalTemplate | null; busy: boolean; onCancel: () => void; onSave: (p: Record<string, unknown>) => void }) {

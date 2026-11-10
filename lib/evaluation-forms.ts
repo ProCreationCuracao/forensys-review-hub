@@ -70,11 +70,11 @@ export const DEFAULT_EVALUATION_TEMPLATES: Array<{
     name: "Agent performance evaluation",
     department: "Agent",
     scoreBands: [
-      { min: 0, max: 59, rating: 1, label: "Unacceptable" },
-      { min: 60, max: 74, rating: 2, label: "Needs Improvement" },
-      { min: 75, max: 86, rating: 3, label: "Good" },
-      { min: 87, max: 96, rating: 4, label: "Very Good / Above Average" },
-      { min: 97, max: 100, rating: 5, label: "Exceptional / Outstanding" },
+      { min: 0, max: 59, rating: 1, label: "Needs attention" },
+      { min: 60, max: 69, rating: 2, label: "Bad" },
+      { min: 70, max: 80, rating: 3, label: "Good" },
+      { min: 81, max: 90, rating: 4, label: "Very good" },
+      { min: 91, max: 100, rating: 5, label: "Exceptional" },
     ],
     sections: [
       {
@@ -116,11 +116,11 @@ export const DEFAULT_EVALUATION_TEMPLATES: Array<{
     name: "Dispatcher performance evaluation",
     department: "Dispatcher",
     scoreBands: [
-      { min: 0, max: 59, rating: 1, label: "Unacceptable" },
-      { min: 60, max: 71, rating: 2, label: "Needs Improvement" },
-      { min: 72, max: 83, rating: 3, label: "Good" },
-      { min: 84, max: 92, rating: 4, label: "Very Good / Above Average" },
-      { min: 93, max: 100, rating: 5, label: "Exceptional / Outstanding" },
+      { min: 0, max: 59, rating: 1, label: "Needs attention" },
+      { min: 60, max: 69, rating: 2, label: "Bad" },
+      { min: 70, max: 80, rating: 3, label: "Good" },
+      { min: 81, max: 90, rating: 4, label: "Very good" },
+      { min: 91, max: 100, rating: 5, label: "Exceptional" },
     ],
     sections: [
       {
