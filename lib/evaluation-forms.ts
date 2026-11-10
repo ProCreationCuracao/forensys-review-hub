@@ -233,11 +233,6 @@ export const AGENT_METRICS: MetricDef[] = [
     { level: 5, label: "Good", points: 5, text: "11 or more", test: (v) => v >= 11 },
     { level: 3, label: "Average", points: 3, text: "6 – 10", test: (v) => v >= 6 },
     { level: 1, label: "Bad", points: 0, text: "0 – 5", test: () => true }] },
-  // Bracket not yet confirmed from Pulse — fewer QC notes is better.
-  { key: "qcNotes", label: "Quality control notes", unit: "notes", maxPoints: 10, brackets: [
-    { level: 5, label: "Good", points: 10, text: "0 – 5", test: (v) => v <= 5 },
-    { level: 3, label: "Average", points: 5, text: "6 – 10", test: (v) => v <= 10 },
-    { level: 1, label: "Bad", points: 0, text: "11 or more", test: () => true }] },
 ];
 export const metricDefsFor = (template: { department?: string | null; name?: string } | null | undefined) => isDispatcherTemplate(template) ? DISPATCH_METRICS : AGENT_METRICS;
 
