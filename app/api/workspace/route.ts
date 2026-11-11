@@ -300,6 +300,16 @@ export async function GET() {
   }
 }
 
+
+async function supabaseAdmin(path: string, init: { method: string; body?: unknown }) {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) return { ok: false, status: 500, data: { msg: "User creation is not configured on the server." } as Record<string, unknown> };
+  const r = await fetch(`${url}/auth/v1/admin/${path}`, { method: init.method, headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: init.body ? JSON.stringify(init.body) : undefined });
+  const data = await r.json().catch(() => ({})) as Record<string, unknown>;
+  return { ok: r.ok, status: r.status, data };
+}
+
 export async function POST(request: Request) {
   const access = await requireMember();
   if (!access.member) return json({ error: access.error }, access.status);
@@ -362,6 +372,45 @@ export async function POST(request: Request) {
         await db.update(employees).set({ fullName, email: address, jobTitle: text(p.jobTitle, 120), department: text(p.department, 120), managerId, isActive, updatedAt: now }).where(eq(employees.id, id));
         if (!isActive) await db.update(users).set({ isActive: false, updatedAt: now }).where(eq(users.employeeId, id));
         await audit(member, "employee_updated", "employee", id);
+        return json({ ok: true });
+      }
+      case "create_login": {
+        if (!isRole(member, ["hr_admin"])) return json({ error: "Only HR administrators can create users." }, 403);
+        const address = email(p.email), role = text(p.role, 20) as Role, employeeId = text(p.employeeId, 64) || null;
+        const password = typeof p.password === "string" ? p.password : "", displayName = text(p.displayName, 160);
+        if (!address || !displayName || !["hr_admin", "manager", "employee"].includes(role)) return json({ error: "Enter a name, a valid email and a role." }, 400);
+        if (password.length < 8) return json({ error: "The password must be at least 8 characters." }, 400);
+        if (role !== "hr_admin" && !employeeId) return json({ error: "Link this user to an employee profile." }, 400);
+        const [existing] = await db.select().from(users).where(eq(users.email, address)).limit(1);
+        if (existing && existing.authUserId) return json({ error: "A user with this email already exists. Use Reset password instead." }, 409);
+        const created = await supabaseAdmin("users", { method: "POST", body: { email: address, password, email_confirm: true, user_metadata: { full_name: displayName } } });
+        if (!created.ok) {
+          const msg = String(created.data.msg || created.data.message || created.data.error_description || "");
+          return json({ error: /already/i.test(msg) ? "This email already has a login. Use Reset password instead." : `Could not create the login${msg ? `: ${msg}` : "."}` }, 400);
+        }
+        const authId = String(created.data.id || "");
+        if (existing) await db.update(users).set({ role, employeeId, displayName, authUserId: authId || null, isActive: true, invitedBy: member.authUserId ?? member.id, updatedAt: now }).where(eq(users.id, existing.id));
+        else await db.insert(users).values({ id: crypto.randomUUID(), email: address, displayName, role, employeeId, authUserId: authId || null, invitedBy: member.authUserId ?? member.id, createdAt: now, updatedAt: now });
+        await audit(member, "user_created", "user", address);
+        return json({ ok: true }, 201);
+      }
+      case "reset_password": {
+        if (!isRole(member, ["hr_admin"])) return json({ error: "Only HR administrators can reset passwords." }, 403);
+        const id = text(p.id, 64), password = typeof p.password === "string" ? p.password : "";
+        if (password.length < 8) return json({ error: "The password must be at least 8 characters." }, 400);
+        const [target] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+        if (!target) return json({ error: "User not found." }, 404);
+        let authId = target.authUserId;
+        if (!authId) {
+          const made = await supabaseAdmin("users", { method: "POST", body: { email: target.email, password, email_confirm: true } });
+          if (!made.ok) return json({ error: "This person has no login yet and one could not be created." }, 400);
+          authId = String(made.data.id || "");
+          await db.update(users).set({ authUserId: authId, updatedAt: now }).where(eq(users.id, id));
+        } else {
+          const r = await supabaseAdmin(`users/${authId}`, { method: "PUT", body: { password } });
+          if (!r.ok) return json({ error: "Could not change the password." }, 400);
+        }
+        await audit(member, "password_reset", "user", id);
         return json({ ok: true });
       }
       case "set_access": {
