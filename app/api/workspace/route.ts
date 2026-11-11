@@ -447,6 +447,20 @@ export async function POST(request: Request) {
         await audit(member, "review_created", "review", reviewId);
         return json({ ok: true, id: reviewId }, 201);
       }
+      case "delete_employee": {
+        if (member.role !== "hr_admin") return json({ error: "Only HR administrators can delete employees." }, 403);
+        const id = text(p.id, 64);
+        const [person] = await db.select({ id: employees.id }).from(employees).where(eq(employees.id, id)).limit(1);
+        if (!person) return json({ error: "Employee not found." }, 404);
+        await db.update(employees).set({ managerId: null, updatedAt: now }).where(eq(employees.managerId, id));
+        await db.update(users).set({ employeeId: null, updatedAt: now }).where(eq(users.employeeId, id));
+        await db.delete(goals).where(eq(goals.employeeId, id));
+        await db.delete(reviews).where(eq(reviews.employeeId, id));
+        await db.delete(monthlyStats).where(eq(monthlyStats.employeeId, id));
+        await db.delete(employees).where(eq(employees.id, id));
+        await audit(member, "employee_deleted", "employee", id);
+        return json({ ok: true });
+      }
       case "delete_review": {
         if (member.role !== "hr_admin") return json({ error: "Only HR administrators can delete evaluations." }, 403);
         const id = text(p.id, 64);
