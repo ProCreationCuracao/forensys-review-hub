@@ -4,7 +4,7 @@ import {
   Activity, ArrowDownToLine, ArrowLeft, ArrowRight, Bell, CalendarDays, Check,
   CheckCircle2, ChevronDown, CircleHelp, ClipboardList, FileText, Filter, Goal,
   LayoutDashboard, LogOut, Menu, MoreHorizontal, Plus, Search, Settings, ShieldCheck,
-  Users, X, Clock3, Pencil, UserRound, BarChart3, LockKeyhole, Trash2,
+  Users, X, Clock3, Pencil, UserRound, BarChart3, LockKeyhole, Trash2, Eye, Printer,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { metricDefsFor, type MetricDef, computeOverallScore, EMPTY_FORM_DATA, EMPTY_METRICS, METRIC_LEVELS, RATING_TONE, bandForScore, isDispatcherTemplate, parseMinutes, scoreDispatchMetrics, type DispatchMetrics } from "../lib/evaluation-forms";
@@ -174,6 +174,7 @@ export default function WorkspaceClient({ signedInName, signOutHref }: { signedI
       {modal === "template" && <TemplateForm template={selectedTemplate} busy={busy} onCancel={() => setModal(null)} onSave={(payload) => action("save_template", payload, selectedTemplate ? "Evaluation form updated." : "Evaluation form added.")} />}
     </Modal>}
     {toast && <div className="toast" role="status">{toast}</div>}
+    <EvaluationViewer/>
   </div>;
 }
 
@@ -329,7 +330,7 @@ function ReviewsPage({ data, employees, reviews, isEmployee, activeEmployee, onR
         <td><RatingChip rating={review?.rating ?? null}/></td>
         <td>{review?.status === "completed" ? (review.employeeAcknowledged ? <span className="ack yes"><Check size={14}/> Yes</span> : <span className="ack">Pending</span>) : <span className="muted-dash">—</span>}</td>
         <td className="right" onClick={(event) => event.stopPropagation()}><div className="row-actions">
-          {review && review.formData && tpl && <button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee: person, stage: period, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button>}
+          {review && review.formData && tpl && <><button className="icon-btn" title="View evaluation" onClick={() => viewEvaluation({ employee: person, stage: period, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><Eye size={16}/></button><button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee: person, stage: period, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button></>}
           {isEmployee ? <>{review && <button className="button secondary small" onClick={() => onReview(review, person)}>View</button>}{review?.status === "completed" && !review.employeeAcknowledged && <button className="button primary small" onClick={() => void acknowledge(review)}>Sign off</button>}</>
             : <button className={review ? "button secondary small" : "button primary small"} onClick={() => review ? onReview(review, person) : onReview(null, person, period)}>{!review ? "Start" : review.status === "completed" ? "Open" : "Continue"}</button>}
         </div></td>
@@ -440,7 +441,7 @@ function EmployeeDashboard({ employee, employees, reviews, cycles, templates, mo
     <section className="panel table-panel history-panel"><div className="panel-header"><div><h2>{tab === "monthly" ? "Monthly Pulse data" : "Evaluation history"}</h2><p>{tab === "monthly" ? "Imported from the monthly Pulse report" : `All submitted evaluations for ${employee.fullName.split(" ")[0]}`}</p></div><div className="segmented small"><button className={tab === "evals" ? "active" : ""} onClick={() => setTab("evals")}>Evaluations</button><button className={tab === "monthly" ? "active" : ""} onClick={() => setTab("monthly")}>Monthly Pulse ({months.length})</button></div></div><div className="table-scroll">{tab === "monthly" ? <MonthlyTable rows={months}/> : <><table className="data-table"><thead><tr><th>Round</th><th>Date</th><th>Form</th><th>Score</th><th>Rating</th><th>Supervisor</th><th className="right">Actions</th></tr></thead><tbody>
       {mine.length ? [...mine].reverse().map((review) => { const tpl = pickTemplate(templates, review.templateId, employee.department); const editable = isAdmin || review.cycleId === activeCycleId; return <tr key={review.id} onClick={() => editable && onOpenReview(review)}>
         <td><b>{roundName(review, cycles)}</b></td><td>{review.formData?.evaluationDate ? dateLabel(review.formData.evaluationDate) : dateLabel(review.scheduledDate)}</td><td>{tpl?.name ?? "—"}</td><td className="num">{scoreOf(review) ?? "—"}</td><td><RatingChip rating={review.rating}/></td><td>{review.formData?.supervisor || "—"}</td>
-        <td className="right" onClick={(event) => event.stopPropagation()}><div className="row-actions">{tpl && review.formData && <button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button>}{editable && <button className="button secondary small" onClick={() => onOpenReview(review)}>Open</button>}</div></td>
+        <td className="right" onClick={(event) => event.stopPropagation()}><div className="row-actions">{tpl && review.formData && <><button className="button secondary small" title="View evaluation" onClick={() => viewEvaluation({ employee, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><Eye size={15}/> View</button><button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button></>}{editable && <button className="button secondary small" onClick={() => onOpenReview(review)}>Open</button>}</div></td>
       </tr>; }) : <tr><td colSpan={7}><Empty icon={ClipboardList} title="No evaluations yet" text="Submitted evaluations will appear here and build up this dashboard over the years." action={isAdmin ? <button className="button primary small" onClick={onNew}><Plus size={14}/> New evaluation</button> : undefined}/></td></tr>}
     </tbody></table></>}</div></section>
     </div>
@@ -491,7 +492,7 @@ function EvaluationsPage({ employees, reviews, cycles, templates, activeCycleId,
     <section className="panel table-panel fill"><div className="table-scroll"><table className="data-table"><thead><tr><th>Employee</th><th>Team</th><th>Round</th><th>Date</th><th>Score</th><th>Rating</th><th className="right">Actions</th></tr></thead><tbody>
       {rows.length ? rows.map(({ review, person }) => { const tpl = pickTemplate(templates, review.templateId, person.department); const editable = isAdmin || review.cycleId === activeCycleId; return <tr key={review.id} onClick={() => onOpenEmployee(person)}>
         <td><Person employee={person}/></td><td><span className="dept-pill">{teamOf(person) === "Other" ? person.department || "—" : teamOf(person)}</span></td><td><b>{roundName(review, cycles)}</b></td><td>{dateLabel(review.formData?.evaluationDate || review.scheduledDate)}</td><td className="num">{scoreOf(review) ?? "—"}</td><td><RatingChip rating={review.rating}/></td>
-        <td className="right" onClick={(event) => event.stopPropagation()}><div className="row-actions">{tpl && review.formData && <button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee: person, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button>}{editable && isAdmin && <button className="button secondary small" onClick={() => onOpenReview(review, person)}>Open</button>}</div></td>
+        <td className="right" onClick={(event) => event.stopPropagation()}><div className="row-actions">{tpl && review.formData && <><button className="button secondary small" title="View evaluation" onClick={() => viewEvaluation({ employee: person, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><Eye size={15}/> View</button><button className="icon-btn" title="Print / PDF" onClick={() => printEvaluation({ employee: person, stage: review.stage, form: review.formData!, template: tpl, acknowledged: review.employeeAcknowledged })}><FileText size={16}/></button></>}{editable && isAdmin && <button className="button secondary small" onClick={() => onOpenReview(review, person)}>Open</button>}</div></td>
       </tr>; }) : <tr><td colSpan={7}><Empty icon={ClipboardList} title="No submitted evaluations" text="Click “New evaluation”, fill in the form and press Submit." action={isAdmin ? <button className="button primary small" onClick={onNew}><Plus size={14}/> New evaluation</button> : undefined}/></td></tr>}
     </tbody></table></div><div className="table-footer"><span>{rows.length} submitted evaluation{rows.length === 1 ? "" : "s"}</span></div></section>
   </>;
@@ -592,6 +593,61 @@ function metricsHtml(form: EvalFormData, template: EvalTemplate) {
   const rows = scored.results.map((r) => `<tr><td class="item">${esc(r.def.label)}</td><td>${esc(r.display)}</td><td>${esc(r.bracket || "—")}</td><td>${r.level ? esc(r.label ?? METRIC_LEVELS.find((l) => l.level === r.level)?.label) : "—"}</td><td class="x">${r.points ?? "—"} / ${r.def.maxPoints}</td></tr>`).join("");
   return `<table class="grid"><thead><tr><th class="item">${title}</th><th>Result</th><th>Bracket</th><th>Level</th><th>Points</th></tr></thead><tbody>${rows}<tr><td class="item"><b>Total metric points</b></td><td colspan="3"></td><td class="x">${scored.total} / ${scored.max}</td></tr></tbody></table>`;
 }
+
+type ViewArgs = { employee: Employee | null; stage: Stage; form: EvalFormData; template: EvalTemplate; acknowledged: boolean };
+function viewEvaluation(args: ViewArgs) { window.dispatchEvent(new CustomEvent("view-evaluation", { detail: args })); }
+const RATING_WORD: Record<string, string> = { needs_improvement: "Needs improvement", good: "Good", exceptional: "Exceptional" };
+function EvaluationViewer() {
+  const [v, setV] = useState<ViewArgs | null>(null);
+  useEffect(() => {
+    const open = (e: Event) => setV((e as CustomEvent<ViewArgs>).detail);
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setV(null); };
+    window.addEventListener("view-evaluation", open); window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("view-evaluation", open); window.removeEventListener("keydown", key); };
+  }, []);
+  if (!v) return null;
+  const { employee, stage, form, template, acknowledged } = v;
+  const overall = computeOverallScore(template, form);
+  const band = bandForScore(template.scoreBands, overall.score);
+  const scored = scoreDispatchMetrics(form.metrics ?? EMPTY_METRICS, metricDefsFor(template));
+  const hasMetrics = scored.results.some((r) => r.value != null);
+  const counts = { needs_improvement: 0, good: 0, exceptional: 0 } as Record<string, number>;
+  template.sections.forEach((sec) => sec.items.forEach((it) => { const r = form.items[`${sec.key}/${it.key}`]?.rating; if (r) counts[r] += 1; }));
+  const pct = Math.max(0, Math.min(100, overall.score ?? 0));
+  return <div className="ev-overlay" onClick={() => setV(null)}>
+    <div className="ev-sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="ev-top">
+        <img src="/forensys-logo.png" alt="ForenSys"/>
+        <div className="ev-top-title"><b>{template.name}</b><span>{stageLabel[stage]}</span></div>
+        <div className="ev-top-actions"><button className="button secondary small" onClick={() => printEvaluation(v)}><Printer size={15}/> Print / PDF</button><button className="icon-btn" title="Close" onClick={() => setV(null)}><X size={18}/></button></div>
+      </div>
+      <div className="ev-body">
+        <section className="ev-hero">
+          <div className="ev-person"><div className="ev-avatar">{(employee?.fullName ?? "?").split(" ").map((x) => x[0]).slice(0, 2).join("")}</div>
+            <div><h2>{employee?.fullName ?? "—"}</h2><p>{employee?.department ?? ""}{form.period ? ` · ${form.period}` : ""}</p>
+              <div className="ev-facts"><span><small>Evaluation date</small>{longDate(form.evaluationDate)}</span><span><small>Employed since</small>{longDate(form.employmentDate)}</span><span><small>Supervisor</small>{form.supervisor || "—"}</span></div></div></div>
+          <div className="ev-score"><div className="ev-ring" style={{ ["--p" as string]: `${pct}` } as React.CSSProperties}><div><strong>{overall.score ?? "—"}</strong><small>of 100</small></div></div>
+            <div className="ev-rating">{band ? <><span className={`ev-band r${band.rating}`}>{band.rating} · {band.label}</span><small>Overall rating</small></> : <small>No rating yet</small>}</div></div>
+        </section>
+        <section className="ev-scale">{[...template.scoreBands].sort((a, b) => a.min - b.min).map((b) => <div key={b.rating} className={`ev-step r${b.rating} ${band && band.rating === b.rating ? "on" : ""}`}><b>{b.label}</b><small>{b.min}–{b.max}</small></div>)}</section>
+        {hasMetrics && <section className="ev-card"><h3>{isDispatcherTemplate(template) ? "Dispatch performance" : "Agent performance"}</h3>
+          <div className="ev-metrics">{scored.results.map((r) => { const lvl = METRIC_LEVELS.find((m) => m.level === r.level); return <div key={r.def.key} className={`ev-metric tone-${lvl?.tone ?? "none"}`}><small>{r.def.label}</small><strong>{r.display}</strong><span>{r.level ? `${r.label ?? lvl?.label} · ${r.points} pts` : "—"}</span></div>; })}</div></section>}
+        <section className="ev-card"><h3>Performance items</h3>
+          <div className="ev-summary"><span className="good-x">Exceptional <b>{counts.exceptional}</b></span><span className="good">Good <b>{counts.good}</b></span><span className="needs">Needs improvement <b>{counts.needs_improvement}</b></span></div>
+          {template.sections.map((sec) => <div key={sec.key} className="ev-section"><h4>{sec.title}</h4>
+            {sec.items.map((it) => { const a = form.items[`${sec.key}/${it.key}`]; return <div key={it.key} className="ev-item"><div className="ev-item-main"><span>{it.label}</span>{a?.note ? <p>{a.note}</p> : null}</div><span className={`ev-chip ${a?.rating ?? "none"}`}>{a?.rating ? RATING_WORD[a.rating] : "Not rated"}</span></div>; })}</div>)}
+        </section>
+        <div className="ev-two">
+          <section className="ev-card"><h3>Supervisor feedback</h3><p className="ev-text">{form.supervisorSupport || "—"}</p></section>
+          <section className="ev-card"><h3>Employee feedback</h3><p className="ev-text">{form.employeeFeedback || "—"}</p></section>
+        </div>
+        {form.meetingNotes ? <section className="ev-card"><h3>Meeting notes</h3><p className="ev-text">{form.meetingNotes}</p></section> : null}
+        <p className="ev-ack">{acknowledged ? "✓ Acknowledged by the employee" : "Not yet acknowledged by the employee"}</p>
+      </div>
+    </div>
+  </div>;
+}
+
 function printEvaluation({ employee, stage, form, template, acknowledged }: { employee: Employee | null; stage: Stage; form: EvalFormData; template: EvalTemplate; acknowledged: boolean }) {
   const overall = computeOverallScore(template, form);
   const band = bandForScore(template.scoreBands, overall.score);
